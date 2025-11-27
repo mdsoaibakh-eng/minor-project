@@ -1,11 +1,16 @@
+import email
 import os
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+from flask import Flask, app, render_template, redirect, url_for, flash, request, session
 from dotenv import load_dotenv
-from models import db, Item, Admin
+from models import db, Item, Admin , Student, Application
 from markupsafe import Markup, escape
 from functools import wraps
 
 load_dotenv()
+
+################################################
+ #       LOGIN login_required
+#################################################
 
 def login_required(f):
     @wraps(f)
@@ -16,11 +21,32 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+
+################################################
+  ##      student login_required
+#################################################
+
+def student_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get('student_id'):
+            flash('Please log in as student.', 'error')
+            return redirect(url_for('student_login'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
 def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', '123456')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # e.g. mysql+pymysql://user:pass@host:port/db
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+
+    UPLOAD_FOLDER = "static/uploads"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
     db.init_app(app)
 
@@ -35,6 +61,7 @@ def create_app():
 # ##############################################
 #       ADMIN AUTHENTICATION
 #################################################
+
     @app.route("/admin/register", methods=["GET", "POST"])
     def register():
         if request.method == "POST":
@@ -57,6 +84,13 @@ def create_app():
             flash("Admin registered successfully.", "success")
             return redirect(url_for("admin_login"))
         return render_template("admin_register.html")
+
+# ##########################################################
+
+#     ADMIN LOGIN
+
+# ########################################################## 
+
 
     @app.route("/admin/login", methods=["GET", "POST"])
     def admin_login():
@@ -82,10 +116,37 @@ def create_app():
 
 # ##########################################################
 
+#     STUDENT AUTHENTICATION
+
+# ##########################################################        
+    @app.route("/student/register", methods=["GET", "POST"])
+    def register():
+        if request.method == "POST":
+            username = (request.form.get("username") or "").strip()
+            password = (request.form.get("password") or "").strip()
+
+        
+            if not username  or not password:
+                flash("Username and password are required.", "error")
+                return render_template("student_register.html")
+            
+            if Admin .query.filter_by(username=username).first() or Student.query.filter_by(email=email).first():
+                flash("Username already exists.", "error")
+                return render_template("student_register.html")
+            
+            Student = Student (username=username)
+            Student.set_password(password)
+            db.session.add(Student)
+            db.session.commit()
+            flash("Student registered successfully.", "success")
+            return redirect(url_for("student_login"))
+        return render_template("student_register.html")
+    
+# ##########################################################
+
 # Public Views
 
-# ########################################################
-
+# ########################################################## 
 
     @app.route('/')
     def index():
