@@ -1,5 +1,5 @@
 from app import create_app
-from models import db, Product, Registration, User, Admin
+from models import db, Event, Registration, Student, Admin
 
 app = create_app()
 
@@ -9,7 +9,7 @@ with app.app_context():
     tables = inspector.get_table_names()
     print(f"Tables found: {tables}")
     
-    expected_tables = ['products', 'registrations', 'users', 'admins']
+    expected_tables = ['events', 'registrations', 'students', 'admins']
     missing_tables = [t for t in expected_tables if t not in tables]
     
     if missing_tables:
@@ -17,10 +17,10 @@ with app.app_context():
     else:
         print("SUCCESS: All expected tables found.")
         
-    # Check Product columns
-    columns = [c['name'] for c in inspector.get_columns('products')]
-    print(f"Product columns: {columns}")
+    # Check Event columns
+    columns = [c['name'] for c in inspector.get_columns('events')]
+    print(f"Event columns: {columns}")
     if 'date' in columns and 'location' in columns:
-        print("SUCCESS: Product table has new columns.")
+        print("SUCCESS: Event table has new columns.")
     else:
-        print("ERROR: Product table missing new columns.")
+        print("ERROR: Event table missing new columns.")
